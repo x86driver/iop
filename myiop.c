@@ -10,6 +10,7 @@
 #include <sys/select.h>
 #include <sys/times.h>
 #include "UTL_func.h"
+#include "IOP_packet.h"
 
 int Uart_fd;
 
@@ -75,15 +76,23 @@ void show_time(unsigned char *buf)
         printf("time %02d:%02d:%02d\n", tm->tm_hour, tm->tm_min, tm->tm_sec);
 }
 
+void send_packet()
+{
+}
+
 int main()
 {
 	int packet = 0;
 	int count = 0;
 	unsigned char buffer[255];
+	u8 data = 1;
+	int read_count = 0;
 	memset(&buffer[0], 0, sizeof(buffer));
 
-	Uart_fd = open("/dev/tcc-uart5", O_RDONLY);
+	Uart_fd = open("/dev/tcc-uart5", O_RDWR);
 	uart_setup(B57600);
+
+	Send_IOP_Packet(10, &data, 2);
 
 read_again:
 	while (1) {
@@ -101,20 +110,16 @@ read_again:
 		printf("0x%02x ", buffer[i]);
 	printf("\n");
 
-	if (buffer[1] != 0x99) {
+//	if (buffer[1] != 0x99) {
+	if (read_count < 80) {
+//	while (1) {
 		count = 0;
+		++read_count;
 		goto read_again;
 	}
 
 	close(Uart_fd);
 
-/*
-	FILE *fp = fopen("gps.bin", "wb");
-	if (!fp)
-		perror("gps.bin");
-	fwrite(buffer, count, 1, fp);
-	fclose(fp);
-*/
 	show_time(buffer+3);
 
 	GPS_packed_remote_state_type *remote_packet = (GPS_packed_remote_state_type*)(buffer+3);
