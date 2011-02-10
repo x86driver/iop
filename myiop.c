@@ -85,7 +85,7 @@ int main()
 	int packet = 0;
 	int count = 0;
 	unsigned char buffer[255];
-	u8 data = 1;
+	unsigned short data = 516;
 	int read_count = 0;
 	memset(&buffer[0], 0, sizeof(buffer));
 
@@ -106,12 +106,13 @@ read_again:
 
 	printf("packet: %d, count: %d\t", packet++, count);
 	int i;
-	for (i = 0; i < ((count < 16) ? count : 16); ++i)
+//	for (i = 0; i < ((count < 16) ? count : 16); ++i)
+	for (i = 0; i < count; ++i)
 		printf("0x%02x ", buffer[i]);
-	printf("\n");
+	printf("\n\n");
 
 //	if (buffer[1] != 0x99) {
-	if (read_count < 80) {
+	if (read_count < 1) {
 //	while (1) {
 		count = 0;
 		++read_count;
