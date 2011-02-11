@@ -73,7 +73,7 @@ void show_time(unsigned char *buf)
                                           remote_packet->wn_lng,
                                           remote_packet->leap_scnds);
         struct tm *tm = localtime(&utcsec);
-        printf("time %02d:%02d:%02d\n", tm->tm_hour, tm->tm_min, tm->tm_sec);
+        printf("time %d/%02d/%02d %02d:%02d:%02d\n", tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec);
 }
 
 void send_packet()
@@ -110,14 +110,11 @@ read_again:
 
 	printf("packet: %d, count: %d\t", packet++, count);
 	int i;
-//	for (i = 0; i < ((count < 16) ? count : 16); ++i)
 	for (i = 0; i < count; ++i)
 		printf("0x%02x ", buffer[i]);
 	printf("\n\n");
 
-//	if (buffer[1] != 0x99) {
-	if (read_count < 1) {
-//	while (1) {
+	if (buffer[1] != 0x99) {
 		count = 0;
 		++read_count;
 		goto read_again;
