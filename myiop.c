@@ -80,14 +80,18 @@ void send_packet()
 {
 }
 
-int main()
+int main(int argc, char **argv)
 {
 	int packet = 0;
 	int count = 0;
 	unsigned char buffer[255];
-	unsigned short data = 516;
+	unsigned short data = 0;
 	int read_count = 0;
 	memset(&buffer[0], 0, sizeof(buffer));
+
+	if (argc == 2)
+		data = atoi(argv[1]);
+	printf("Send %d to GPS\n", data);
 
 	Uart_fd = open("/dev/tcc-uart5", O_RDWR);
 	uart_setup(B57600);
