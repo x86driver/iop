@@ -1,4 +1,4 @@
-TARGET = myiop
+TARGET = myiop fuckiop
 
 CC = arm-none-linux-gnueabi-gcc
 
@@ -17,6 +17,12 @@ myiop:myiop.c UTL_func.o IOP_packet.o
 
 up: $(TARGET)
 	adb push myiop /system
+
+fuckiop: fuckiop.c
+	$(CC) -o $@ $< $(CFLAGS) -g
+
+fuck: fuckiop
+	adb push fuckiop /system
 
 clean:
 	rm -rf $(TARGET) *.o
