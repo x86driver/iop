@@ -76,15 +76,17 @@ void show_iop()
     printf("\n");
 }
 
-static inline void remain()
+static inline int remain()
 {
     unsigned char *ptr = &buffer[3];
     do {
-        if (read(Uart_fd, ptr++, 1) == 0) break;
+        if (read(Uart_fd, ptr++, 1) == 0) return 0;
         //fread(ptr++, 1, 1, gps_fp);
         if (*(ptr-1) == 0x10 && *(ptr-2) == 0x10)
             --ptr;
     } while (*(ptr-1) != 0x03 || *(ptr-2) != 0x10);
+
+    return 1;
 }
 
 void reduce()
@@ -116,17 +118,17 @@ int do_checksum()
     return 1;
 }
 
-void parse_iop()
+int parse_iop()
 {
     memset(&buffer[0], 0, sizeof(buffer));
 
 reread:
         //fread(&buffer[0], 2, 1, gps_fp);
-        if (read(Uart_fd, &buffer[0], 2) == 0) return;
+        if (read(Uart_fd, &buffer[0], 2) == 0) return 0;
         if (buffer[0] == 0x10 && buffer[1] != 0x03) { /* beginning */
             //fread(&buffer[2], 1, 1, gps_fp);    /* read id, size */
-            if (read(Uart_fd, &buffer[2], 1) == 0) return;
-            remain();
+            if (read(Uart_fd, &buffer[2], 1) == 0) return 0;
+            if (remain() == 0) return 0;
         } else {
             printf("Can't locate beginning\n");
             goto reread;
@@ -134,6 +136,7 @@ reread:
 
     if (do_checksum() == 0)
         show_iop();
+    return 1;
 }
 
 int main()
@@ -154,7 +157,7 @@ int main()
 //    for (i = 0; i < 16; ++i) {
     while (1) {
 //        printf("### Number %d of packets ###\n", i);
-        parse_iop();
+        if (parse_iop() == 0) break;
         printf("Check %d packets OK\r", ++i);
         fflush(NULL);
         if (feof(gps_fp)) {
@@ -163,6 +166,7 @@ int main()
         }
     }
 
+    printf("\n");
     fclose(gps_fp);
     close(Uart_fd);
     return 0;
