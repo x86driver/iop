@@ -73,7 +73,7 @@ void show_iop()
     for (i = 0; i < size; ++i) {
         printf("0x%02x ", (unsigned char)buffer[i]);
     }
-    printf("\n");
+    printf("\n\n");
 }
 
 static inline int remain()
@@ -162,18 +162,22 @@ int main(int argc, char **argv)
 #endif
 
     int i = 0, ret;
+    int good = 0, bad = 0;
     while (1) {
         ret = parse_iop(i);
         if (ret == 0)
             break;
         if (ret == 1) {
+            ++good;
             printf("Check %d packets OK\r", i);
             fflush(NULL);
-        }
+        } else if (ret == 2)
+            ++bad;
         ++i;
     }
 
-    printf("\n");
+    printf("\n\n");
+    printf("Good: %d, Bad: %d, Ratio: %f %%\n", good, bad, (double)bad/(good+bad)*100.0);
     fclose(gps_fp);
     close(Uart_fd);
     return 0;
