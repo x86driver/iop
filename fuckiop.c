@@ -11,8 +11,8 @@
 #include <sys/times.h>
 
 int Uart_fd;
-//FILE *gps_fp;
-char buffer[256];
+FILE *gps_fp;
+unsigned char buffer[256];
 
 int uart_setup(unsigned int baud_rate)
 {
@@ -69,41 +69,30 @@ int uart_setup(unsigned int baud_rate)
 void show_iop()
 {
     int i, size;
-    size = buffer[2] + 6;
+    size = (unsigned char)(buffer[2]) + 6;
     for (i = 0; i < size; ++i) {
-        printf("0x%02x ", buffer[i]);
+        printf("0x%02x ", (unsigned char)buffer[i]);
     }
     printf("\n");
 }
 
 static inline void remain()
 {
-    ssize_t ret = 0, temp = 0;
-    int size = buffer[2] + 8;
-    char *ptr = &buffer[3];
-    int i;
+    unsigned char *ptr = &buffer[3];
     do {
-        read(Uart_fd, ptr++, 1);
-        if (*ptr == 0x10 && *(ptr-1) == 0x10)
+        if (read(Uart_fd, ptr++, 1) == 0) break;
+        //fread(ptr++, 1, 1, gps_fp);
+        if (*(ptr-1) == 0x10 && *(ptr-2) == 0x10)
             --ptr;
     } while (*(ptr-1) != 0x03 || *(ptr-2) != 0x10);
-#if 0
-    do {
-        temp = read(Uart_fd, ptr, size);
-        ret += temp;
-        ptr += temp;
-        size -= temp;
-    } while (ret < size);
-#endif
 }
 
 void reduce()
 {
-    char tempbuf[256];
+    unsigned char tempbuf[256];
     int size = buffer[2];
-    char *ptr = &buffer[3];
-    char *dst = &tempbuf[0];
-    int i;
+    unsigned char *ptr = &buffer[3];
+    unsigned char *dst = &tempbuf[0];
     while (*ptr != 0x10 && *(ptr+1) != 0x03) {
         if (*ptr == 0x10)
             ++ptr;
@@ -112,50 +101,69 @@ void reduce()
     memcpy(&buffer[3], &tempbuf[0], size+3);
 }
 
+int do_checksum()
+{
+    unsigned char checksum = 0;
+    int j;
+    for (j = 1; j < (unsigned char)buffer[2]+3; ++j)
+        checksum += (unsigned char)buffer[j];
+    checksum ^= 0xff;
+    ++checksum;
+    if (checksum != (unsigned char)buffer[buffer[2]+3]) {
+        printf("Checksum error, correct = 0x%02x, buffer = 0x%02x\n", checksum, buffer[buffer[2]+3]);
+        return 0;
+    }
+    return 1;
+}
+
 void parse_iop()
 {
-    int size = 0;
     memset(&buffer[0], 0, sizeof(buffer));
 
 reread:
         //fread(&buffer[0], 2, 1, gps_fp);
-        read(Uart_fd, &buffer[0], 2);
+        if (read(Uart_fd, &buffer[0], 2) == 0) return;
         if (buffer[0] == 0x10 && buffer[1] != 0x03) { /* beginning */
-//            fread(&buffer[2], 2, 1, gps_fp);    /* read id, size */
-//            fread(&buffer[4], buffer[2], 1, gps_fp);
-            read(Uart_fd, &buffer[2], 1);
-            size = buffer[2] + 2;
+            //fread(&buffer[2], 1, 1, gps_fp);    /* read id, size */
+            if (read(Uart_fd, &buffer[2], 1) == 0) return;
             remain();
-//            reduce();
         } else {
             printf("Can't locate beginning\n");
             goto reread;
         }
 
-    show_iop();
+    if (do_checksum() == 0)
+        show_iop();
 }
 
 int main()
 {
     printf("Build on %s\n", __TIMESTAMP__);
-    Uart_fd = open("/dev/tcc-uart5", O_RDONLY);
+//    Uart_fd = open("/dev/tcc-uart5", O_RDONLY);
+    Uart_fd = open("gps.bin", O_RDONLY);
     uart_setup(B57600);
 
-#if 0
+#if 1
     gps_fp = fdopen(Uart_fd, "rb");
     if (!gps_fp) {
         perror("fdopen");
     }
 #endif
 
-    int i;
-    for (i = 0; i < 10; ++i) {
-        printf("### Number %d of packets ###\n", i);
+    int i = 0;
+//    for (i = 0; i < 16; ++i) {
+    while (1) {
+//        printf("### Number %d of packets ###\n", i);
         parse_iop();
-        printf("\n\n");
+        printf("Check %d packets OK\r", ++i);
+        fflush(NULL);
+        if (feof(gps_fp)) {
+            printf("FEOF detected!\n");
+            break;
+        }
     }
 
-//    fclose(gps_fp);
+    fclose(gps_fp);
     close(Uart_fd);
     return 0;
 }

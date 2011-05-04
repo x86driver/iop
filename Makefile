@@ -19,7 +19,7 @@ up: $(TARGET)
 	adb push myiop /system
 
 fuckiop: fuckiop.c
-	$(CC) -o $@ $< $(CFLAGS) -g
+	gcc -o $@ $< $(CFLAGS) -g
 
 fuck: fuckiop
 	adb push fuckiop /system
