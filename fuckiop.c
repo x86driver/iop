@@ -103,7 +103,7 @@ void reduce()
     memcpy(&buffer[3], &tempbuf[0], size+3);
 }
 
-int do_checksum()
+int do_checksum(int index)
 {
     unsigned char checksum = 0;
     int j;
@@ -112,13 +112,13 @@ int do_checksum()
     checksum ^= 0xff;
     ++checksum;
     if (checksum != (unsigned char)buffer[buffer[2]+3]) {
-        printf("Checksum error, correct = 0x%02x, buffer = 0x%02x\n", checksum, buffer[buffer[2]+3]);
+        printf("\n\nNo. #%d checksum error, correct = 0x%02x, buffer = 0x%02x\n", index, checksum, buffer[buffer[2]+3]);
         return 0;
     }
     return 1;
 }
 
-int parse_iop()
+int parse_iop(int index)
 {
     memset(&buffer[0], 0, sizeof(buffer));
 
@@ -134,17 +134,25 @@ reread:
             goto reread;
         }
 
-    if (do_checksum() == 0)
+    if (do_checksum(index) == 0) {
         show_iop();
+        return 2;
+    }
     return 1;
 }
 
-int main()
+int main(int argc, char **argv)
 {
     printf("Build on %s\n", __TIMESTAMP__);
+
+    char *file = "gps.bin";
 //    Uart_fd = open("/dev/tcc-uart5", O_RDONLY);
-    Uart_fd = open("gps.bin", O_RDONLY);
-    uart_setup(B57600);
+    if (argc == 2)
+        file = argv[1];
+    printf("Open %s for processing\n", file);
+    Uart_fd = open(file, O_RDONLY);
+
+//    uart_setup(B57600);
 
 #if 1
     gps_fp = fdopen(Uart_fd, "rb");
@@ -153,17 +161,16 @@ int main()
     }
 #endif
 
-    int i = 0;
-//    for (i = 0; i < 16; ++i) {
+    int i = 0, ret;
     while (1) {
-//        printf("### Number %d of packets ###\n", i);
-        if (parse_iop() == 0) break;
-        printf("Check %d packets OK\r", ++i);
-        fflush(NULL);
-        if (feof(gps_fp)) {
-            printf("FEOF detected!\n");
+        ret = parse_iop(i);
+        if (ret == 0)
             break;
+        if (ret == 1) {
+            printf("Check %d packets OK\r", i);
+            fflush(NULL);
         }
+        ++i;
     }
 
     printf("\n");
