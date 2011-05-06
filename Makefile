@@ -1,4 +1,4 @@
-TARGET = myiop fuckiop sendfile
+TARGET = myiop fuckiop sendfile uartiop
 
 CC = arm-none-linux-gnueabi-gcc
 
@@ -21,10 +21,13 @@ up: $(TARGET)
 fuckiop: fuckiop.c
 	gcc -o $@ $< $(CFLAGS) -g
 
-fuck: fuckiop
-	adb push fuckiop /system
+fuck: uartiop
+	adb push uartiop /system
 
 sendfile: sendfile.c
+	$(CC) -o $@ $< $(CFLAGS) -O2
+
+uartiop: uartiop.c
 	$(CC) -o $@ $< $(CFLAGS) -O2
 
 clean:
