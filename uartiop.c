@@ -36,8 +36,14 @@ static inline ssize_t checked_read(int fildes, void *buf, size_t nbyte)
 
     do {
         ret = read(fildes, buf, 1);
-        if (ret == 0)
+        if (ret == 0) {
+            printf("收到 0, 再試一次!\n");
+            ++count;
+        }
+        if (count == 10) {
+            printf("一直讀到 0\n");
             return 0;
+        }
     } while (ret != 1);
 
     return ret;
