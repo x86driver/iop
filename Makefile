@@ -1,4 +1,4 @@
-TARGET = myiop fuckiop sendfile uartiop
+TARGET = myiop fuckiop sendfile uartiop shitiop
 
 CC = arm-none-linux-gnueabi-gcc
 
@@ -29,6 +29,12 @@ sendfile: sendfile.c
 
 uartiop: uartiop.c
 	$(CC) -o $@ $< $(CFLAGS) -O2
+
+shitiop: shitiop.c
+	gcc -o $@ $< $(CFLAGS) -g
+
+shit: shitiop
+	adb push shitiop /system
 
 clean:
 	rm -rf $(TARGET) *.o
