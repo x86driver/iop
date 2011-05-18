@@ -31,7 +31,7 @@ uartiop: uartiop.c
 	$(CC) -o $@ $< $(CFLAGS) -O2
 
 shitiop: shitiop.c
-	gcc -o $@ $< $(CFLAGS) -g
+	gcc -o $@ $< $(CFLAGS) -g -O2
 
 shit: shitiop
 	adb push shitiop /system

@@ -96,20 +96,26 @@ void show_iop()
     printf("\n\n");
 }
 
+static inline int check_length(int count, int index)
+{
+    if ((count-5) != RxBuff[2]) {   /* Length error */
+        printf("No. #%d length error, receive = %d, buffer = %d\n", index, count-5, RxBuff[2]);
+        return -1;
+    }
+    return 0;
+}
+
 static inline int remain()
 {
     int count = 0;
     int flag = 0;
     unsigned char *ptr = &RxBuff[1];
 
-//    memset(&temp_buf[0], 0, sizeof(temp_buf));
-
     while (1) {
         if (read(Uart_fd, ptr, 1) == 0)
             return 0;
-        if (unlikely(flag == 1)) {
+        if (flag == 1) {
             if (unlikely(*ptr == 0x03)) {
-//                printf("parse one iop\n");
                 ++count;
                 break;
             }
@@ -119,17 +125,14 @@ static inline int remain()
             flag = 0;
             continue;
         }
-        if (unlikely(*ptr == 0x10))
+        if (*ptr == 0x10)
             flag = 1;
 
         ++ptr;
         ++count;
     }
 
-    if ((count-5) != RxBuff[2]) {
-        return -1;
-    }
-    return 1;
+    return count;
 }
 
 int do_checksum(int index)
@@ -148,20 +151,18 @@ int do_checksum(int index)
 
 int parse_iop(int index)
 {
-    int ret;
+    int count;
     memset(&RxBuff[0], 0, sizeof(RxBuff));
 
     do {
         if (read(Uart_fd, &RxBuff[0], 1) == 0)
             return 0;
     } while (RxBuff[0] != 0x10);
-    ret = remain();
 
-    if (ret == 0)
+    if ((count = remain()) == 0)
         return 0;
 
-    if (ret == -1) {
-        printf("Length error on #%d\n", index);
+    if (check_length(count, index) == -1) {
         show_length_iop();
         return 2;
     }
