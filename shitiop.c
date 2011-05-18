@@ -99,7 +99,7 @@ void show_iop()
 static inline int check_length(int count, int index)
 {
     if ((count-5) != RxBuff[2]) {   /* Length error */
-        printf("No. #%d length error, receive = %d, buffer = %d\n", index, count-5, RxBuff[2]);
+        printf("No. #%d length error, buffer = %d, receive = %d\n", index, RxBuff[2], count-5);
         return -1;
     }
     return 0;
