@@ -182,6 +182,7 @@ int main(int argc, char **argv)
 {
     printf("Build on %s\n", __TIMESTAMP__);
 
+    system("echo 1 > /sys/class/misc/mt3329/mt3329_power");
     Uart_fd = open("/dev/tcc-uart5", O_RDWR);
     if (Uart_fd == -1)
         perror("open uart");
